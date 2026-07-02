@@ -2,26 +2,59 @@
 
 Find the right car in seconds.
 
-CarMatch AI is a production-ready MVP for helping confused Indian car buyers discover the best cars for their needs. Instead of browsing hundreds of listings, users answer a short preference form and receive ranked recommendations with clear explanations.
+CarMatch AI is an AI-native car recommendation MVP built for the CarDekho AI Native Software Engineer assignment. The goal is not to clone CarDekho. The goal is to help confused car buyers quickly discover suitable cars based on budget, family needs, driving style, and priorities.
+
+Users can either fill a structured preference form or type a natural language request such as:
+
+```text
+I have a budget of 12 lakh, I need a safe SUV for my family, mostly for city driving.
+```
+
+The backend parses the request, scores cars from MongoDB, and returns the top recommendations with explanations.
 
 ## Features
 
-- Intelligent recommendation flow based on budget, fuel, transmission, body type, family size, driving type, and priority
-- Top 5 recommended cars with score and explanation
-- Car details page with specifications, pros, cons, and description
-- Search, sort, and filter tools on recommendation results
-- Responsive React 19 UI with Tailwind CSS
+- Structured preference form for budget, fuel type, transmission, body type, priority, family size, and driving type
+- AI Prompt mode for natural language car recommendation queries
+- Backend parser for budget phrases such as `12 lakh`, `15 lacs`, and rupee amounts
+- Recommendation engine with weighted scoring and human-readable explanations
+- Top 5 recommended cars with score, reason, image, price, mileage, safety rating, fuel type, and transmission
+- Car details page with specifications, description, pros, cons, and a 7-image gallery
+- Search, sort, fuel filter, body type filter, and price filter on recommendation results
+- Responsive React UI with Tailwind CSS, loading states, empty states, and hover effects
 - Express API with MongoDB Atlas and Mongoose
-- Seed script with 50 Indian car records
-- Environment-based configuration for deployability
+- Seed script with 50 Indian-market cars
+- Environment-based setup for local development and Render deployment
+
+## Tech Stack
+
+### Frontend
+
+- React 19
+- Vite
+- React Router DOM
+- Tailwind CSS
+- Axios
+- Lucide React icons
+
+### Backend
+
+- Node.js
+- Express.js
+- MongoDB Atlas
+- Mongoose
+- dotenv
+- cors
+- nodemon
 
 ## Architecture
 
-The application uses a split frontend/backend structure:
+The project is split into a Vite client and an Express API server.
 
-- `client`: React 19, Vite, React Router DOM, Tailwind CSS, Axios
-- `server`: Node.js, Express.js, Mongoose, MongoDB Atlas, dotenv, cors
-- `server/utils/recommendationEngine.js`: scoring logic that ranks cars from MongoDB
+- `client`: React app, pages, reusable UI components, hooks, API service layer, image fallbacks
+- `server`: Express server, MongoDB config, Mongoose model, routes, controllers, middleware, seed data, recommendation utilities
+- `server/utils/recommendationEngine.js`: scoring algorithm and natural-language preference parser
+- `server/seed/cars.js`: 50 seeded car records with image galleries
 
 ## Folder Structure
 
@@ -33,9 +66,13 @@ root
 │   │   ├── hooks
 │   │   ├── pages
 │   │   ├── services
+│   │   ├── utils
 │   │   ├── App.jsx
-│   │   └── main.jsx
-│   └── package.json
+│   │   ├── main.jsx
+│   │   └── styles.css
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
 ├── server
 │   ├── config
 │   ├── controllers
@@ -44,13 +81,17 @@ root
 │   ├── routes
 │   ├── seed
 │   ├── utils
-│   ├── server.js
-│   └── package.json
+│   ├── .env.example
+│   ├── package.json
+│   └── server.js
 ├── package.json
+├── .gitignore
 └── README.md
 ```
 
 ## Installation
+
+Install root, client, and server dependencies:
 
 ```bash
 npm run install:all
@@ -64,7 +105,7 @@ cp server/.env.example server/.env
 
 Update `server/.env` with your MongoDB Atlas connection string.
 
-Create the frontend environment file if the API is not running on the default local URL:
+Create the frontend environment file if the backend API is not running on the default local URL:
 
 ```bash
 cp client/.env.example client/.env
@@ -88,21 +129,29 @@ VITE_API_BASE_URL=http://localhost:5000/api
 
 ## Running Locally
 
-Seed MongoDB Atlas:
+Seed MongoDB Atlas with 50 cars:
 
 ```bash
 npm run seed
 ```
 
-Start frontend and backend together:
+Start frontend and backend together from the root folder:
 
 ```bash
 npm run dev
 ```
 
-Frontend: `http://localhost:5173`
+Default local URLs:
 
-Backend: `http://localhost:5000`
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:5000`
+- Health check: `http://localhost:5000/api/health`
+
+Build the frontend for production:
+
+```bash
+npm run build
+```
 
 ## API Endpoints
 
@@ -111,9 +160,9 @@ Backend: `http://localhost:5000`
 | `GET` | `/api/health` | Health check |
 | `GET` | `/api/cars` | Return all cars |
 | `GET` | `/api/cars/:id` | Return one car by id |
-| `POST` | `/api/recommend` | Return top recommended cars |
+| `POST` | `/api/recommend` | Return top recommended cars from structured or natural-language preferences |
 
-Example recommendation request:
+### Structured Recommendation Request
 
 ```json
 {
@@ -127,6 +176,63 @@ Example recommendation request:
 }
 ```
 
+### Natural Language Recommendation Request
+
+```json
+{
+  "query": "I have a budget of 12 lakh, I need a safe SUV for my family, mostly for city driving."
+}
+```
+
+### Recommendation Response Shape
+
+```json
+{
+  "success": true,
+  "count": 5,
+  "preferences": {
+    "budget": 1200000,
+    "fuelType": "Petrol",
+    "transmission": "Automatic",
+    "bodyType": "SUV",
+    "priority": "Safety",
+    "familySize": 5,
+    "drivingType": "City"
+  },
+  "data": [
+    {
+      "make": "Tata",
+      "model": "Punch",
+      "recommendationScore": 100,
+      "recommendationReason": "Based on your request, this car fits your budget, has an excellent safety rating, has enough seating for your family."
+    }
+  ]
+}
+```
+
+## Database Schema
+
+Collection: `cars`
+
+Main fields:
+
+- `make`
+- `model`
+- `variant`
+- `price`
+- `fuelType`
+- `transmission`
+- `bodyType`
+- `engine`
+- `mileage`
+- `safetyRating`
+- `seatingCapacity`
+- `description`
+- `image`
+- `images`
+- `pros`
+- `cons`
+
 ## Recommendation Algorithm
 
 Each car is scored using weighted rules:
@@ -139,7 +245,33 @@ Each car is scored using weighted rules:
 - Family size match: 10 points
 - Driving type fit: up to 10 points
 
-Cars are sorted by total score and the API returns the top 5 with `recommendationScore` and `recommendationReason`.
+Cars are sorted by total score, then by lower price when scores tie. The API returns the top 5 cars with `recommendationScore` and `recommendationReason`.
+
+## AI Prompt Parsing
+
+The natural-language parser extracts preferences from buyer sentences without requiring a paid AI API.
+
+It can infer:
+
+- Budget: `12 lakh`, `15 lacs`, `1200000`, `1 crore`
+- Body type: SUV, Compact SUV, Sedan, Hatchback, MPV
+- Fuel type: Petrol, Diesel, Electric, Hybrid, EV
+- Transmission: Manual, Automatic
+- Priority: Safety, Mileage, Performance, Balanced
+- Family size: family of 4, 5 seater, 7 people
+- Driving type: City, Highway, Mixed
+
+This keeps the MVP deployable and deterministic while still demonstrating AI-native product thinking.
+
+## Image Handling
+
+Each car includes:
+
+- One primary image for cards
+- Seven gallery images for the details page
+- Frontend image fallback handling to avoid broken image boxes
+
+The current seed uses stable `images.unsplash.com` URLs so images remain visible. Exact model-specific images, such as guaranteed Maruti Suzuki Swift photos only, require either manually curated URLs per model or the official Unsplash API with an access key.
 
 ## Deployment
 
@@ -149,7 +281,19 @@ Cars are sorted by total score and the API returns the top 5 with `recommendatio
 2. Set root directory to `server`.
 3. Build command: `npm install`.
 4. Start command: `npm start`.
-5. Add `PORT`, `MONGODB_URI`, and `CLIENT_URL` environment variables.
+5. Add environment variables:
+
+```env
+PORT=5000
+MONGODB_URI=your_mongodb_atlas_connection_string
+CLIENT_URL=https://your-frontend-url.onrender.com
+```
+
+After deployment, seed the production database from your local machine by temporarily setting `server/.env` to the production `MONGODB_URI`, then run:
+
+```bash
+npm run seed
+```
 
 ### Frontend on Render
 
@@ -157,12 +301,17 @@ Cars are sorted by total score and the API returns the top 5 with `recommendatio
 2. Set root directory to `client`.
 3. Build command: `npm install && npm run build`.
 4. Publish directory: `dist`.
-5. Add `VITE_API_BASE_URL` pointing to the deployed backend API URL.
+5. Add environment variable:
+
+```env
+VITE_API_BASE_URL=https://your-backend-url.onrender.com/api
+```
 
 ## Future Improvements
 
-- Add AI-generated natural language recommendation summaries
-- Add ownership cost estimates and EMI calculators
-- Add side-by-side comparison
-- Add richer filters for airbags, boot space, and service network
-- Add analytics for most common buyer preferences
+- Add curated exact image URLs for each car model
+- Add a real LLM layer for richer preference extraction and conversational follow-up questions
+- Add side-by-side car comparison
+- Add EMI and ownership-cost estimator
+- Add boot space, airbags, service network, and ground clearance filters
+- Add automated API and component tests
